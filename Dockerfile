@@ -1,4 +1,6 @@
 FROM ubuntu:20.04
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
   automake \
@@ -32,20 +34,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   uuid-dev \
   valac \
   wget \
-  xz-utils
+  xz-utils \
+  tzdata \
+  ruby
 
 # install ruby
-RUN mkdir -p /opt/ruby-2.2.2/ && \
-  curl -s https://s3-external-1.amazonaws.com/heroku-buildpack-ruby/cedar-14/ruby-2.2.2.tgz | tar xzC /opt/ruby-2.2.2/
-ENV PATH /opt/ruby-2.2.2/bin:$PATH
+#RUN mkdir -p /opt/ruby-2.2.2/ && \
+  #curl -s https://s3-external-1.amazonaws.com/heroku-buildpack-ruby/cedar-14/ruby-2.2.2.tgz | tar xzC /opt/ruby-2.2.2/
+#ENV PATH /opt/ruby-2.2.2/bin:$PATH
 
 # install fpm to build packages (deb, rpm)
 RUN gem install fpm --no-document
 
+RUN apt-get install -y --no-install-recommends cmake
+
 # install osx cross compiling tools
 RUN cd /opt/ && \
   git clone https://github.com/tpoechtrager/osxcross.git
-COPY MacOSX10.10.sdk.tar.bz2 /opt/osxcross/tarballs/
+COPY MacOSX12.0.sdk.tar.xz /opt/osxcross/tarballs/
 RUN echo "\n" | bash /opt/osxcross/build.sh
 RUN rm /opt/osxcross/tarballs/*
 ENV PATH /opt/osxcross/target/bin:$PATH
@@ -55,6 +61,7 @@ ENV SHELL /bin/bash
 RUN cd /tmp && wget https://launchpad.net/ubuntu/+archive/primary/+files/gcab_0.6.orig.tar.xz && tar -xf gcab_0.6.orig.tar.xz && cd gcab-0.6 && ./configure && make && make install
 
 RUN cd /tmp && wget https://launchpad.net/ubuntu/+archive/primary/+files/msitools_0.94.orig.tar.xz && tar -xf msitools_0.94.orig.tar.xz && cd msitools-0.94 && ./configure && make && make install
+RUN apt-get install -y --no-install-recommends gperf
 
 ONBUILD WORKDIR /home/mruby/code
 ONBUILD ENV GEM_HOME /home/mruby/.gem/
